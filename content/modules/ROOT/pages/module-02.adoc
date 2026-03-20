@@ -1,0 +1,159 @@
+= Finding the Large File
+
+== Step 1: Verify the Disk Space Problem
+
+First, let's confirm what Scott reported. The `df` command shows disk usage for mounted filesystems:
+
+[source,bash,role=execute]
+----
+df -h /
+----
+
+[NOTE]
+====
+Look at the "Use%" column for the root filesystem (`/`).
+
+In a healthy system, you want to keep usage below 80-85%. When usage gets above 90%, you're in the danger zone - systems can start having problems, and at 100% things will definitely break.
+====
+
+== Step 2: Find the Culprit Directory
+
+Now we need to find what's consuming all this space. We'll start by checking the top-level directories to see which one is the biggest:
+
+[source,bash,role=execute]
+----
+du -sh /* 2>/dev/null | sort -hr | head -10
+----
+
+[TIP]
+====
+This command:
+- `du -sh /*` - Shows the size of each top-level directory
+- `2>/dev/null` - Suppresses permission errors
+- `sort -hr` - Sorts by human-readable size, largest first
+- `head -10` - Shows only the top 10
+
+Look for directories that seem unusually large, especially `/var` which commonly contains logs.
+====
+
+== Step 3: Drill Down Into `/var/log`
+
+The `/var/log` directory is the standard location for system and application logs. Let's investigate it:
+
+[source,bash,role=execute]
+----
+du -sh /var/log/* 2>/dev/null | sort -hr | head -10
+----
+
+[NOTE]
+====
+You should see `/var/log/super-business` standing out as unusually large. That's our target!
+====
+
+== Step 4: Find the Specific Large File
+
+Now let's see what's inside that directory:
+
+[source,bash,role=execute]
+----
+du -sh /var/log/super-business/* 2>/dev/null
+----
+
+You can also use `ls` to see the files with their sizes:
+
+[source,bash,role=execute]
+----
+ls -lh /var/log/super-business/
+----
+
+[IMPORTANT]
+====
+You should find a file called `business-monitor.log` that's consuming a significant amount of space.
+
+This is clearly a runaway log file - something is writing to it continuously and it's grown out of control.
+====
+
+== Step 5: Check What's Writing to the File
+
+Before we delete it, let's see if anything is actively writing to this file. We can use `lsof` to check:
+
+[source,bash,role=execute]
+----
+lsof /var/log/super-business/business-monitor.log
+----
+
+[NOTE]
+====
+The `lsof` command shows what processes have this file open. You'll likely see a process called `business-monitor.sh` with the file open for writing.
+
+This confirms the file is actively being written to. Keep this in mind - it will be important later!
+====
+
+== Step 6: Delete the Large File
+
+Since this is clearly a runaway log file consuming our disk space, let's delete it:
+
+[source,bash,role=execute]
+----
+rm /var/log/super-business/business-monitor.log
+----
+
+== Step 7: Verify It's Gone
+
+Confirm the file has been deleted:
+
+[source,bash,role=execute]
+----
+ls -lh /var/log/super-business/
+----
+
+The file should be gone from the directory listing. Good work!
+
+== Step 8: Check if Space Was Freed
+
+Now let's check if our disk space problem is solved:
+
+[source,bash,role=execute]
+----
+df -h /
+----
+
+[IMPORTANT]
+====
+**Wait... what?**
+
+Look at the "Use%" column. It should be... the same as before? Or maybe even slightly worse?
+
+You just deleted a massive log file, but the disk space didn't free up!
+
+This is the mystery we need to solve.
+====
+
+## What Just Happened?
+
+You did everything right:
+- ✓ Found the large file consuming disk space
+- ✓ Confirmed it was a runaway log file
+- ✓ Deleted the file
+- ✓ Verified it's gone from the directory
+
+But the disk space is still consumed. This seems impossible, but there's a logical explanation.
+
+[quote, Sysadmin Nate]
+____
+*Quick ping from Nate*
+
+Hey, heard you're working on the disk space issue. Just checking in - did you try deleting the big log file?
+
+If you did and the space didn't free up, don't panic. This is a common gotcha in Linux.
+
+Remember when you checked what had the file open? That's the key to this mystery.
+
+Keep investigating - you're on the right track.
+
+-Nate
+____
+
+In the next module, we'll investigate why the space wasn't freed and what's really going on.
+
+Click *Next* to continue the investigation.

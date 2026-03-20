@@ -1,0 +1,135 @@
+= The Mystery: Space Not Freed
+
+== Understanding the Situation
+
+You've deleted a large file, confirmed it's gone from the directory, but the disk space is still consumed. This seems impossible, but there's a logical explanation rooted in how Linux handles files and processes.
+
+== How File Deletion Works in Linux
+
+Let's understand what really happens when you delete a file:
+
+[NOTE]
+====
+**The Key Concept: Inodes and Links**
+
+In Linux, when you delete a file, you're actually just removing the directory entry (the "link") to the file's data. The actual data blocks on disk are only freed when:
+
+1. All directory links to the file are removed, AND
+2. All processes that have the file open close their file descriptors
+
+If ANY process still has the file open, the data remains on disk even though you can't see the file in any directory.
+====
+
+== Checking for the Running Process
+
+You saw earlier that `business-monitor.sh` had the file open. Let's verify it's still running:
+
+[source,bash,role=execute]
+----
+ps aux | grep -i business
+----
+
+[TIP]
+====
+You should see the `business-monitor.sh` process still running. This is the smoking gun!
+
+The process had the file open when you deleted it, and it still has it open. From the process's perspective, nothing changed - it still has a valid file descriptor and can keep writing to the file.
+====
+
+== Investigating Process File Descriptors
+
+Every running process has a directory in `/proc/$PID/` that contains information about it, including its open file descriptors. Let's look:
+
+[source,bash,role=execute]
+----
+BUSINESS_PID=$(pgrep -f business-monitor.sh)
+echo "Business monitor PID: $BUSINESS_PID"
+----
+
+Now examine what files this process has open:
+
+[source,bash,role=execute]
+----
+ls -l /proc/$BUSINESS_PID/fd/
+----
+
+[IMPORTANT]
+====
+Look closely at the output! You should see entries that look like:
+
+```
+lrwx------. 1 rhel rhel 64 ... 1 -> /var/log/super-business/business-monitor.log (deleted)
+```
+
+Notice the **(deleted)** marker at the end. This is proof that:
+
+1. The process still has the file open (file descriptor 1 = stdout)
+2. The file has been deleted from the directory structure
+3. The data is still on disk because the process hasn't closed it
+
+This is your "deleted but not freed" file!
+====
+
+== What's Actually Happening Right Now
+
+Even as you read this:
+
+- The `business-monitor.sh` process is still running
+- It's writing new log entries to the deleted file
+- The file is growing larger
+- The disk usage is getting worse
+- But you can't see the file with `ls` because it's not in any directory anymore!
+
+[quote, Sysadmin Nate]
+____
+*From: Nate*
+
+Ah, I see you've discovered the deleted-but-open file situation. Good troubleshooting!
+
+This happens more often than you'd think:
+- Someone finds a huge log file
+- They delete it to free space
+- But the application is still running and has the file open
+- Space doesn't free up
+- Confusion ensues
+
+The file exists in a kind of limbo state - no directory entry, but still consuming disk blocks. It's like a ghost file haunting your filesystem.
+
+The only way to free the space is to make the process close the file. You can:
+1. Stop/restart the service properly (preferred)
+2. Kill the process (faster but less graceful)
+
+In the next step, I'll show you how to definitively prove this with `lsof` - it's the go-to tool for this exact situation.
+
+-Nate
+____
+
+== Why This Matters
+
+This scenario is extremely common in production:
+
+**Runaway log files** → Administrator deletes them → Process still running → Space not freed → Panic
+
+Understanding this behavior is crucial for any system administrator.
+
+== Visual Representation
+
+Let's think about what the file system looks like right now:
+
+```
+Directory structure:     Process file descriptors:
+/var/log/                business-monitor.sh (PID 1234)
+└── super-business/        fd 0 -> /dev/pts/0
+    (empty)                fd 1 -> /var/log/.../business-monitor.log (deleted)
+                           fd 2 -> /var/log/.../business-monitor.log (deleted)
+
+Disk blocks:
+[######### STILL ALLOCATED #########]
+         ↑
+    Still referenced by the open file descriptor,
+    even though there's no directory entry
+```
+
+In the next module, we'll use the `lsof` command to get a complete picture of this situation and see exactly how much space this deleted file is consuming.
+
+Click *Next* to continue.

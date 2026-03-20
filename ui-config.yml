@@ -1,0 +1,26 @@
+---
+
+antora:
+  name: modules
+  dir: www
+  modules:
+    - name: module-01
+      label: "Introduction"
+      solveButton: false
+    - name: module-02
+      label: "Finding the Large File"
+      solveButton: true
+    - name: module-03
+      label: "The Mystery"
+      solveButton: true
+    - name: module-04
+      label: "Confirming with lsof"
+      solveButton: true
+    - name: module-05
+      label: "Resolution"
+      solveButton: true
+
+tabs:
+  - name: ">_ terminal"
+    url: /wetty
+

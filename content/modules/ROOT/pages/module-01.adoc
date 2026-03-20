@@ -1,0 +1,65 @@
+= Introduction: The Case of the Disappearing Disk Space
+
+== Welcome to Super-Business
+
+Welcome to another day at Super-Business, where everything is super-businessey! Today you'll be tackling a common but tricky disk space issue that can confuse even experienced system administrators.
+
+== The Scenario
+
+You've just received this urgent email from Manager Scott:
+
+[quote, Manager Scott]
+____
+URGENT: Production server disk space crisis!
+
+I was checking our main business server and the disk is nearly full! This is affecting our super-business operations and I need you to fix it immediately.
+
+I don't know what's taking up all the space, but we need it cleared out ASAP before things start breaking. Can you investigate and free up some disk space?
+
+Thanks,
+- Scott
+____
+
+[NOTE]
+====
+Shortly after, you receive another email from Sysadmin Nate:
+
+*From: Nate (Senior Sysadmin)*
+
+Hey,
+
+Scott pinged me about the disk space issue on the business server. I'm tied up with another emergency, so I'll let you handle this one.
+
+Standard disk space troubleshooting workflow:
+1. Confirm the disk usage with `df -h`
+2. Find what's consuming the space with `du`
+3. Investigate the largest directories/files
+4. Clean up what's safe to remove
+
+Should be straightforward, but heads up - sometimes disk space issues aren't as simple as they seem. If you run into anything weird, let me know.
+
+Good luck!
+
+-Nate
+
+P.S. - Watch out for runaway log files. They're usually the culprit.
+====
+
+== Your Mission
+
+In this lab, you'll work through a systematic troubleshooting workflow to:
+
+1. Verify the disk space problem
+2. Find what's consuming the space
+3. Clean up the large files
+4. Discover a surprising complication
+5. Investigate and resolve the root cause
+
+This is a real-world scenario that happens frequently in production environments. You'll learn not just how to free up disk space, but also how to handle a tricky edge case that confuses many system administrators.
+
+[TIP]
+====
+Take your time and work methodically. Each step will build on the previous one, and by the end you'll have a solid understanding of how Linux handles file deletion and why disk space might not free up immediately.
+====
+
+Click *Next* to begin investigating the problem.

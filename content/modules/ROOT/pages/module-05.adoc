@@ -1,0 +1,166 @@
+= Resolution
+
+== Closing the Open Filehandle
+
+Now that we've identified the process holding the deleted file open, we need to close that filehandle. The most straightforward way is to stop the process.
+
+== Step 1: Record the Current Disk Usage
+
+First, let's capture the current disk usage so we can see the difference after we fix the problem:
+
+[source,bash,role=execute]
+----
+df -h / | tail -1
+----
+
+Make a mental note of the "Use%" value - we'll check this again after the fix.
+
+== Step 2: Stop the Runaway Process
+
+Since this is a backgrounded script (not a proper service), we'll need to kill it. First, let's find its PID again:
+
+[source,bash,role=execute]
+----
+pgrep -f business-monitor.sh
+----
+
+Now kill the process:
+
+[source,bash,role=execute]
+----
+pkill -f business-monitor.sh
+----
+
+[NOTE]
+====
+The `pkill` command finds and kills processes by name pattern. The `-f` flag tells it to match against the full command line, not just the process name.
+
+In production, you'd typically use:
+- `systemctl stop service-name` for systemd services
+- `service service-name stop` for init services
+- Kill scripts only for backgrounded or runaway processes
+====
+
+== Step 3: Verify the Process is Gone
+
+Confirm the process is no longer running:
+
+[source,bash,role=execute]
+----
+pgrep -f business-monitor.sh
+----
+
+You should get no output, meaning the process has been terminated.
+
+== Step 4: Check Disk Space Again
+
+Now for the moment of truth - check if the disk space has been freed:
+
+[source,bash,role=execute]
+----
+df -h / | tail -1
+----
+
+[TIP]
+====
+Compare the "Use%" value to what it was before. You should see a significant drop!
+
+The deleted file's disk space has finally been reclaimed now that the process that had it open is gone.
+====
+
+== Step 5: Verify No Deleted Files Remain
+
+Let's confirm there are no more deleted-but-open files:
+
+[source,bash,role=execute]
+----
+lsof +L1 /var/log 2>/dev/null
+----
+
+You should see no output, confirming all deleted files have been cleaned up.
+
+== Understanding What Happened
+
+Let's recap the entire scenario:
+
+1. **Initial State**: business-monitor.sh was running and writing to `/var/log/super-business/business-monitor.log`
+2. **Scott's Action**: He deleted the log file using `rm` while the process was still running
+3. **The Problem**: The file was unlinked from the directory but still open by the process, so space wasn't freed
+4. **Your Investigation**: You used `df`, `ps`, `/proc`, and `lsof` to diagnose the issue
+5. **The Fix**: You killed the process, which closed the filehandle and freed the space
+
+[IMPORTANT]
+====
+**Best Practices to Prevent This Issue:**
+
+1. **Never manually delete log files from running processes**
+   - Use proper log rotation tools (logrotate)
+   - Or stop the service first, then delete, then restart
+
+2. **Use log rotation with signal handling**
+   - Most services can receive a HUP signal to close and reopen log files
+   - Example: `systemctl reload httpd` (for Apache)
+
+3. **Monitor disk space proactively**
+   - Set up alerts when disk usage exceeds thresholds
+   - Don't wait for an emergency before addressing log growth
+
+4. **Configure appropriate log retention**
+   - Compress old logs
+   - Delete logs after a certain age
+   - Use log aggregation systems for long-term storage
+====
+
+== How to Do This Correctly
+
+If you need to clear log space while a service is running, here's the right approach:
+
+[source,bash]
+----
+# CORRECT WAY: Truncate instead of delete
+cat /dev/null > /var/log/service/large.log
+
+# OR: Stop the service first
+systemctl stop service
+rm /var/log/service/large.log
+systemctl start service
+
+# OR: Use log rotation with signal
+logrotate -f /etc/logrotate.d/service
+----
+
+[quote, Sysadmin Nate]
+____
+Well done! You handled this exactly right.
+
+I've added a note to Scott's ticket explaining what happened and why simply deleting files isn't the solution. I also set up a proper logrotate configuration for the business-monitor logs (if we ever run it again, which hopefully we won't).
+
+For future reference, here's my emergency disk space playbook:
+1. `df -h` - See what's full
+2. `du -sh /*` - Find the big directories
+3. `lsof | grep deleted` - Check for deleted-but-open files
+4. Deal with them appropriately
+5. Document what happened so we can prevent it
+
+You've got solid troubleshooting skills. Keep thinking methodically like this and you'll go far.
+
+-Nate
+____
+
+== Key Takeaways
+
+✓ Deleted files can still consume disk space if a process has them open
+
+✓ Use `lsof | grep deleted` or `lsof +L1` to find deleted-but-open files
+
+✓ Disk space is only freed when the process closes the file or terminates
+
+✓ Proper log rotation is essential for production systems
+
+✓ Always investigate before deleting - understanding the root cause prevents recurrence
+
+✓ The `/proc` filesystem is a valuable source of process information
+
+== Congratulations!
+
+You've successfully resolved the disk space crisis and learned a critical troubleshooting technique that will serve you well throughout your career as a system administrator. This scenario happens in real production environments all the time, and now you know exactly how to handle it.
