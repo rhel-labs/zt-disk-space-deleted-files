@@ -13,7 +13,7 @@ df -h /
 ====
 Look at the "Use%" column for the root filesystem (`/`).
 
-In a healthy system, you want to keep usage below 80-85%. When usage gets above 90%, you're in the danger zone - systems can start having problems, and at 100% things will definitely break.
+In a healthy system, you want to keep usage below 80-85%. When usage gets above 90%, you're in the danger zone , one spike in data and suddenly your disk is full, and at 100% things will definitely break.
 ====
 
 == Step 2: Find the Culprit Directory
@@ -122,7 +122,7 @@ df -h /
 ====
 **Wait... what?**
 
-Look at the "Use%" column. It should be... the same as before? Or maybe even slightly worse?
+Look at the "Use%" column. It's not any better! Or maybe even slightly worse?
 
 You just deleted a massive log file, but the disk space didn't free up!
 

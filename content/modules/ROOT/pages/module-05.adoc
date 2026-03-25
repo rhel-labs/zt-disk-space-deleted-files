@@ -115,7 +115,6 @@ Let's recap the entire scenario:
 
 If you need to clear log space while a service is running, here's the right approach:
 
-[source,bash]
 ----
 # CORRECT WAY: Truncate instead of delete
 cat /dev/null > /var/log/service/large.log
