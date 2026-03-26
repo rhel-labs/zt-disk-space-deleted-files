@@ -18,14 +18,14 @@ cat > /usr/bin/business-monitor.sh << 'EOF'
 # Monitors all the super-businessey things
 
 while true; do
-    echo "$(date) - BUSINESS: Monitoring business metrics for super business operations" >> /var/log/super-business/business-monitor.log
-    echo "$(date) - BUSINESS: Business productivity is at business levels" >> /var/log/super-business/business-monitor.log
-    echo "$(date) - BUSINESS: All business functions operating within business parameters" >> /var/log/super-business/business-monitor.log
+    echo "$(date) - BUSINESS: Monitoring business metrics for super business operations"
+    echo "$(date) - BUSINESS: Business productivity is at business levels"
+    echo "$(date) - BUSINESS: All business functions operating within business parameters"
     sleep 0.1
 done
 EOF
 
-#dd if=/dev/zero of=/var/log/super-business/business-monitor.log bs=1g count=10
+dd if=/dev/zero of=/var/log/super-business/business-monitor.log bs=1G count=22
 chmod +x /usr/bin/business-monitor.sh
 
 cat << EOF > /etc/systemd/system/business-monitor.service
@@ -33,7 +33,10 @@ cat << EOF > /etc/systemd/system/business-monitor.service
 Description=Super Business Monitoring
 
 [Service]
+Type=simple
 ExecStart=/usr/bin/business-monitor.sh
+StandardOutput=append:/var/log/super-business/business-monitor.log
+StandardError=append:/var/log/super-business/business-monitor.log
 
 [Install]
 WantedBy=multi-user.target
