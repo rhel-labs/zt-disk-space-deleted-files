@@ -20,30 +20,37 @@ In Linux, when you delete a file, you're actually just removing the directory en
 If ANY process still has the file open, the data remains on disk even though you can't see the file in any directory.
 ====
 
-== Checking for the Running Process
+== Checking for the Running Service
 
-You saw earlier that `business-monitor.sh` had the file open. Let's verify it's still running:
+You saw earlier that `business-monitor.sh` had the file open. This is actually running as a systemd service. Let's verify it's still running:
 
 [source,bash,role=execute]
 ----
-ps aux | grep -i business
+systemctl status business-monitor.service
 ----
 
 [TIP]
 ====
-You should see the `business-monitor.sh` process still running. This is the smoking gun!
+You should see the `business-monitor.service` is active and running. This is the smoking gun!
 
-The process had the file open when you deleted it, and it still has it open. From the process's perspective, nothing changed - it still has a valid file descriptor and can keep writing to the file.
+The service had the file open when you deleted it, and it still has it open. From the service's perspective, nothing changed - it still has a valid file descriptor and can keep writing to the file.
 ====
 
 == Investigating Process File Descriptors
 
-Every running process has a directory in `/proc/$PID/` that contains information about it, including its open file descriptors. Let's look:
+Every running process has a directory in `/proc/$PID/` that contains information about it, including its open file descriptors. Since this is a systemd service, we can get the main PID from systemctl:
 
 [source,bash,role=execute]
 ----
-BUSINESS_PID=$(pgrep -f business-monitor.sh)
+BUSINESS_PID=$(systemctl show -p MainPID --value business-monitor.service)
 echo "Business monitor PID: $BUSINESS_PID"
+----
+
+Alternatively, you can also find it using pgrep:
+
+[source,bash,role=execute]
+----
+pgrep -f business-monitor.sh
 ----
 
 Now examine what files this process has open:
@@ -95,9 +102,13 @@ This happens more often than you'd think:
 
 The file exists in a kind of limbo state - no directory entry, but still consuming disk blocks. It's like a ghost file haunting your filesystem.
 
-The only way to free the space is to make the process close the file. You can:
-1. Stop/restart the service properly (preferred)
-2. Kill the process (faster but less graceful)
+The only way to free the space is to make the process close the file. Since this is a systemd service, the proper approach is to restart it:
+
+```
+systemctl restart business-monitor.service
+```
+
+This will cleanly stop the service (closing all open files) and then start it fresh. The old filehandles will be closed, and the space will be freed.
 
 In the next step, I'll show you how to definitively prove this with `lsof` - it's the go-to tool for this exact situation.
 

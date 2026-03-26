@@ -2,7 +2,7 @@
 echo "Starting module-02: Finding the Large File" >> /tmp/progress.log
 
 # Start the business-monitor script in the background as the rhel user
-su - rhel -c "nohup /home/rhel/business-monitor.sh > /dev/null 2>&1 &"
+systemctl start business-monitor
 
 # Give it a moment to start and create the log file
 sleep 2

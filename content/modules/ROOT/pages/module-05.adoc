@@ -15,42 +15,40 @@ df -h / | tail -1
 
 Make a mental note of the "Use%" value - we'll check this again after the fix.
 
-== Step 2: Stop the Runaway Process
+== Step 2: Restart the Service
 
-Since this is a backgrounded script (not a proper service), we'll need to kill it. First, let's find its PID again:
-
-[source,bash,role=execute]
-----
-pgrep -f business-monitor.sh
-----
-
-Now kill the process:
+Since this is running as a systemd service, the proper way to close the open filehandle is to restart the service:
 
 [source,bash,role=execute]
 ----
-pkill -f business-monitor.sh
+systemctl restart business-monitor.service
 ----
 
 [NOTE]
 ====
-The `pkill` command finds and kills processes by name pattern. The `-f` flag tells it to match against the full command line, not just the process name.
+The `systemctl restart` command does two things:
+1. **Stops** the service cleanly - this closes all open file descriptors, including the deleted log file
+2. **Starts** the service fresh - it will create a new log file (if the script still tries to write to that path)
 
-In production, you'd typically use:
-- `systemctl stop service-name` for systemd services
-- `service service-name stop` for init services
-- Kill scripts only for backgrounded or runaway processes
+This is the professional way to handle this situation. Restarting the service ensures:
+- File handles are properly closed
+- The service starts in a clean state
+- Any initialization code runs again
+- Logs show a clear restart event for troubleshooting
+
+In production environments, always prefer `systemctl restart` over killing processes directly when dealing with services.
 ====
 
-== Step 3: Verify the Process is Gone
+== Step 3: Verify the Service Restarted
 
-Confirm the process is no longer running:
+Confirm the service has restarted successfully:
 
 [source,bash,role=execute]
 ----
-pgrep -f business-monitor.sh
+systemctl status business-monitor.service
 ----
 
-You should get no output, meaning the process has been terminated.
+You should see the service is active and running, but with a new PID. Notice the service restart time is recent - this confirms the restart worked.
 
 == Step 4: Check Disk Space Again
 
@@ -83,11 +81,11 @@ You should see no output, confirming all deleted files have been cleaned up.
 
 Let's recap the entire scenario:
 
-1. **Initial State**: business-monitor.sh was running and writing to `/var/log/super-business/business-monitor.log`
-2. **Scott's Action**: He deleted the log file using `rm` while the process was still running
-3. **The Problem**: The file was unlinked from the directory but still open by the process, so space wasn't freed
-4. **Your Investigation**: You used `df`, `ps`, `/proc`, and `lsof` to diagnose the issue
-5. **The Fix**: You killed the process, which closed the filehandle and freed the space
+1. **Initial State**: The business-monitor.service was running and writing to `/var/log/super-business/business-monitor.log`
+2. **Scott's Action**: He deleted the log file using `rm` while the service was still running
+3. **The Problem**: The file was unlinked from the directory but still open by the service, so space wasn't freed
+4. **Your Investigation**: You used `df`, `systemctl`, `/proc`, and `lsof` to diagnose the issue
+5. **The Fix**: You restarted the service, which closed the old filehandle and freed the space
 
 [IMPORTANT]
 ====
@@ -116,17 +114,27 @@ Let's recap the entire scenario:
 If you need to clear log space while a service is running, here's the right approach:
 
 ----
-# CORRECT WAY: Truncate instead of delete
+# BEST WAY: Truncate instead of delete (preserves the open file)
 cat /dev/null > /var/log/service/large.log
 
-# OR: Stop the service first
+# GOOD WAY: Restart the service
+systemctl restart service
+
+# ALSO GOOD: Stop, delete, then start
 systemctl stop service
 rm /var/log/service/large.log
 systemctl start service
 
-# OR: Use log rotation with signal
+# PRODUCTION WAY: Use log rotation with signal
 logrotate -f /etc/logrotate.d/service
 ----
+
+[TIP]
+====
+**Why truncate is best**: When you truncate a file using `cat /dev/null > logfile`, the file remains at the same inode and path, but its contents are cleared. Any process with the file open continues writing to the same file, but starting from the beginning. This is instant and requires no service restart.
+
+**Why restart works**: Restarting the service closes all old file handles and opens new ones. If the log file path is hardcoded, the service will create a new log file when it starts.
+====
 
 [quote, Sysadmin Nate]
 ____

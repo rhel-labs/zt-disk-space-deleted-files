@@ -1,12 +1,11 @@
 #!/bin/sh
-echo "Module-05 solve: Killing the process and freeing space" >> /tmp/progress.log
+echo "Module-05 solve: Restarting the service and freeing space" >> /tmp/progress.log
 
 # Commands the participant should run
 df -h / | tail -1
-pgrep -f business-monitor.sh
-pkill -f business-monitor.sh
+systemctl restart business-monitor.service
 sleep 1
-pgrep -f business-monitor.sh
+systemctl status business-monitor.service
 df -h / | tail -1
 lsof +L1 /var/log 2>/dev/null
 
