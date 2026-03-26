@@ -10,10 +10,9 @@ chmod 666 /tmp/progress.log
 
 # Create a directory for our scenario
 mkdir -p /var/log/super-business
-chown rhel:rhel /var/log/super-business
 
 # Create a script that simulates a runaway logging process
-cat > /home/rhel/business-monitor.sh << 'EOF'
+cat > /usr/bin/business-monitor.sh << 'EOF'
 #!/bin/bash
 # Super-Business Critical Business Monitor
 # Monitors all the super-businessey things
@@ -26,7 +25,20 @@ while true; do
 done
 EOF
 
-chmod +x /home/rhel/business-monitor.sh
-chown rhel:rhel /home/rhel/business-monitor.sh
+chmod +x /usr/bin/business-monitor.sh
+
+cat << EOF > /etc/systemd/system/business-monitor.service
+[Unit]
+Description=Super Business Monitoring
+
+[Service]
+ExecStart=/usr/bin/business-monitor.sh
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+systemctl daemon-reload
+systemctl enable --now business-monitor.service
 
 echo "Lab setup complete" >> /tmp/progress.log
