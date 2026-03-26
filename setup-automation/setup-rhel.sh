@@ -25,8 +25,7 @@ while true; do
 done
 EOF
 
-dd if=/dev/zero of=/var/log/super-business/business-monitor.log bs=1024 count=10000000
-
+dd if=/dev/zero of=/var/log/super-business/business-monitor.log bs=1g count=10
 chmod +x /usr/bin/business-monitor.sh
 
 cat << EOF > /etc/systemd/system/business-monitor.service
