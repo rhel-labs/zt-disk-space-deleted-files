@@ -57,7 +57,7 @@ Now examine what files this process has open:
 
 [source,bash,role=execute]
 ----
-ls -l /proc/$BUSINESS_PID/fd/
+sudo ls -l /proc/$BUSINESS_PID/fd/
 ----
 
 [IMPORTANT]

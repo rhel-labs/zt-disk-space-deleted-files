@@ -79,7 +79,7 @@ Before we delete it, let's see if anything is actively writing to this file. We 
 
 [source,bash,role=execute]
 ----
-lsof /var/log/super-business/business-monitor.log
+sudo lsof /var/log/super-business/business-monitor.log
 ----
 
 [NOTE]
@@ -95,7 +95,7 @@ Since this is clearly a runaway log file consuming our disk space, let's delete 
 
 [source,bash,role=execute]
 ----
-rm /var/log/super-business/business-monitor.log
+sudo rm /var/log/super-business/business-monitor.log
 ----
 
 == Step 7: Verify It's Gone

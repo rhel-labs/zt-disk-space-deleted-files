@@ -21,7 +21,7 @@ Since this is running as a systemd service, the proper way to close the open fil
 
 [source,bash,role=execute]
 ----
-systemctl restart business-monitor.service
+sudo systemctl restart business-monitor.service
 ----
 
 [NOTE]
@@ -68,11 +68,11 @@ The deleted file's disk space has finally been reclaimed now that the process th
 
 == Step 5: Verify No Deleted Files Remain
 
-Let's confirm there are no more deleted-but-open files:
+Let's confirm there are no more deleted-but-open files (Or, at least not our super-businessey log!):
 
 [source,bash,role=execute]
 ----
-lsof +L1 /var/log 2>/dev/null
+sudo lsof +L1 /var/log 2>/dev/null
 ----
 
 You should see no output, confirming all deleted files have been cleaned up.

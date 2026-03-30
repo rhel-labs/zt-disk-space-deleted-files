@@ -12,7 +12,7 @@ Let's search for any deleted files that are still open:
 
 [source,bash,role=execute]
 ----
-lsof | grep deleted
+sudo lsof | grep deleted
 ----
 
 [NOTE]
@@ -51,7 +51,7 @@ We can be more specific and look just for deleted files in the `/var/log` area:
 
 [source,bash,role=execute]
 ----
-lsof +L1 /var/log
+sudo lsof +L1 /var/log
 ----
 
 [NOTE]
