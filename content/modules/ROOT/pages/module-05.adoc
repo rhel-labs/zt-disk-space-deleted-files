@@ -80,6 +80,7 @@ Compare the "Use%" value to what it was before. You should see a significant dro
 
 The deleted file's disk space has finally been reclaimed now that the process that had it open is gone.
 =====
+====
 
 .Step 5: Verify No Deleted Files Remain
 [%collapsible]
@@ -94,6 +95,7 @@ sudo lsof +L1 /var/log 2>/dev/null
 ----
 
 You should see no output, confirming all deleted files have been cleaned up.
+====
 
 .Understanding What Happened
 [%collapsible]
