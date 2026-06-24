@@ -20,7 +20,10 @@ In Linux, when you delete a file, you're actually just removing the directory en
 If ANY process still has the file open, the data remains on disk even though you can't see the file in any directory.
 ====
 
-== Checking for the Running Service
+.Checking for the Running Service
+[%collapsible]
+====
+
 
 You saw earlier that `business-monitor.sh` had the file open. This is actually running as a systemd service. Let's verify it's still running:
 
@@ -30,13 +33,16 @@ systemctl status business-monitor.service
 ----
 
 [TIP]
-====
+=====
 You should see the `business-monitor.service` is active and running. This is the smoking gun!
 
 The service had the file open when you deleted it, and it still has it open. From the service's perspective, nothing changed - it still has a valid file descriptor and can keep writing to the file.
+=====
 ====
 
-== Investigating Process File Descriptors
+.Investigating Process File Descriptors
+[%collapsible]
+====
 
 Every running process has a directory in `/proc/$PID/` that contains information about it, including its open file descriptors. Since this is a systemd service, we can get the main PID from systemctl:
 
@@ -61,7 +67,7 @@ sudo ls -l /proc/$BUSINESS_PID/fd/
 ----
 
 [IMPORTANT]
-====
+=====
 Look closely at the output! You should see entries that look like:
 
 ```
@@ -75,9 +81,9 @@ Notice the **(deleted)** marker at the end. This is proof that:
 3. The data is still on disk because the process hasn't closed it
 
 This is your "deleted but not freed" file!
-====
+=====
 
-== What's Actually Happening Right Now
+*What's Actually Happening Right Now*
 
 Even as you read this:
 
@@ -115,7 +121,10 @@ In the next step, I'll show you how to definitively prove this with `lsof` - it'
 -Nate
 ____
 
-== Why This Matters
+.Why This Matters
+[%collapsible]
+====
+
 
 This scenario is extremely common in production:
 
@@ -123,7 +132,7 @@ This scenario is extremely common in production:
 
 Understanding this behavior is crucial for any system administrator.
 
-== Visual Representation
+*Visual Representation*
 
 Let's think about what the file system looks like right now:
 
@@ -142,5 +151,6 @@ Disk blocks:
 ```
 
 In the next module, we'll use the `lsof` command to get a complete picture of this situation and see exactly how much space this deleted file is consuming.
+====
 
 Click *Next* to continue.

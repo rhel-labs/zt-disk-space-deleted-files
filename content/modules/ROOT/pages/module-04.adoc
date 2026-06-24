@@ -1,6 +1,9 @@
 = Confirming with lsof
 
-== The Power of lsof
+.The Power of lsof
+[%collapsible]
+====
+
 
 You've already discovered the deleted file by examining `/proc/$PID/fd/`. Now we're going to use one of the most powerful diagnostic tools in a system administrator's toolkit: `lsof` (List Open Files).
 
@@ -16,15 +19,15 @@ sudo lsof | grep deleted
 ----
 
 [NOTE]
-====
+=====
 This command:
 - Lists all open files in the system (`lsof`)
 - Filters for lines containing "deleted" (`grep deleted`)
 
 The output shows files that have been unlinked from the filesystem but are still open by running processes.
-====
+=====
 
-== Understanding the Output
+*Understanding the Output*
 
 The `lsof` output is formatted in columns:
 
@@ -39,13 +42,13 @@ The `lsof` output is formatted in columns:
 - **NAME**: The filename, with "(deleted)" appended
 
 [TIP]
-====
+=====
 Pay special attention to the SIZE/OFF column! This tells you exactly how much disk space the deleted file is consuming.
 
 If you see a large number here (millions or billions of bytes), you've found your disk space thief!
-====
+=====
 
-== A More Targeted Search
+*A More Targeted Search*
 
 We can be more specific and look just for deleted files in the `/var/log` area:
 
@@ -55,13 +58,17 @@ sudo lsof +L1 /var/log
 ----
 
 [NOTE]
-====
+=====
 The `+L1` flag specifically shows files with a link count less than 1 - in other words, deleted files.
 
 This is often cleaner than using `grep deleted` because it doesn't show other noise in the output.
+=====
 ====
 
-== Getting Process Details
+.Getting Process Details
+[%collapsible]
+====
+
 
 Now that we know which process has the deleted file open, let's get more information about it:
 
@@ -97,7 +104,7 @@ The usual pattern is:
 Bookmark this technique - you'll use it again.
 ____
 
-== What We've Discovered
+*== *What We've Discovered*
 
 At this point, you should be able to clearly identify:
 
@@ -107,5 +114,6 @@ At this point, you should be able to clearly identify:
 - ✓ The user running the process
 
 Now we need to actually fix the problem by closing that filehandle and freeing up the disk space.
+====
 
 Click *Next* to resolve the issue.

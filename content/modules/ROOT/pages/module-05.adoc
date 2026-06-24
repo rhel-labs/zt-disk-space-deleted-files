@@ -4,7 +4,10 @@
 
 Now that we've identified the process holding the deleted file open, we need to close that filehandle. The most straightforward way is to stop the process.
 
-== Step 1: Record the Current Disk Usage
+.Step 1: Record the Current Disk Usage
+[%collapsible]
+====
+
 
 First, let's capture the current disk usage so we can see the difference after we fix the problem:
 
@@ -14,8 +17,12 @@ df -h / | tail -1
 ----
 
 Make a mental note of the "Use%" value - we'll check this again after the fix.
+====
 
-== Step 2: Restart the Service
+.Step 2: Restart the Service
+[%collapsible]
+====
+
 
 Since this is running as a systemd service, the proper way to close the open filehandle is to restart the service:
 
@@ -25,7 +32,7 @@ sudo systemctl restart business-monitor.service
 ----
 
 [NOTE]
-====
+=====
 The `systemctl restart` command does two things:
 1. **Stops** the service cleanly - this closes all open file descriptors, including the deleted log file
 2. **Starts** the service fresh - it will create a new log file (if the script still tries to write to that path)
@@ -37,9 +44,13 @@ This is the professional way to handle this situation. Restarting the service en
 - Logs show a clear restart event for troubleshooting
 
 In production environments, always prefer `systemctl restart` over killing processes directly when dealing with services.
+=====
 ====
 
-== Step 3: Verify the Service Restarted
+.Step 3: Verify the Service Restarted
+[%collapsible]
+====
+
 
 Confirm the service has restarted successfully:
 
@@ -49,8 +60,12 @@ systemctl status business-monitor.service
 ----
 
 You should see the service is active and running, but with a new PID. Notice the service restart time is recent - this confirms the restart worked.
+====
 
-== Step 4: Check Disk Space Again
+.Step 4: Check Disk Space Again
+[%collapsible]
+====
+
 
 Now for the moment of truth - check if the disk space has been freed:
 
@@ -60,13 +75,16 @@ df -h / | tail -1
 ----
 
 [TIP]
-====
+=====
 Compare the "Use%" value to what it was before. You should see a significant drop!
 
 The deleted file's disk space has finally been reclaimed now that the process that had it open is gone.
+=====
+
+.Step 5: Verify No Deleted Files Remain
+[%collapsible]
 ====
 
-== Step 5: Verify No Deleted Files Remain
 
 Let's confirm there are no more deleted-but-open files (Or, at least not our super-businessey log!):
 
@@ -77,7 +95,10 @@ sudo lsof +L1 /var/log 2>/dev/null
 
 You should see no output, confirming all deleted files have been cleaned up.
 
-== Understanding What Happened
+.Understanding What Happened
+[%collapsible]
+====
+
 
 Let's recap the entire scenario:
 
@@ -88,7 +109,7 @@ Let's recap the entire scenario:
 5. **The Fix**: You restarted the service, which closed the old filehandle and freed the space
 
 [IMPORTANT]
-====
+=====
 **Best Practices to Prevent This Issue:**
 
 1. **Never manually delete log files from running processes**
@@ -107,9 +128,13 @@ Let's recap the entire scenario:
    - Compress old logs
    - Delete logs after a certain age
    - Use log aggregation systems for long-term storage
+=====
 ====
 
-== How to Do This Correctly
+.How to Do This Correctly
+[%collapsible]
+====
+
 
 If you need to clear log space while a service is running, here's the right approach:
 
@@ -130,11 +155,11 @@ logrotate -f /etc/logrotate.d/service
 ----
 
 [TIP]
-====
+=====
 **Why truncate is best**: When you truncate a file using `cat /dev/null > logfile`, the file remains at the same inode and path, but its contents are cleared. Any process with the file open continues writing to the same file, but starting from the beginning. This is instant and requires no service restart.
 
 **Why restart works**: Restarting the service closes all old file handles and opens new ones. If the log file path is hardcoded, the service will create a new log file when it starts.
-====
+=====
 
 [quote, Sysadmin Nate]
 ____
@@ -153,6 +178,7 @@ You've got solid troubleshooting skills. Keep thinking methodically like this an
 
 -Nate
 ____
+====
 
 == Key Takeaways
 
