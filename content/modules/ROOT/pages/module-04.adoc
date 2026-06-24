@@ -9,7 +9,7 @@ You've already discovered the deleted file by examining `/proc/$PID/fd/`. Now we
 
 The `lsof` command shows all open files in the system, along with which process has them open. It's the standard tool for finding deleted files that are still consuming space, and it provides more detailed information than manually checking `/proc`.
 
-== Finding Deleted Files
+*Finding Deleted Files*
 
 Let's search for any deleted files that are still open:
 
@@ -80,7 +80,7 @@ ps -p $BUSINESS_PID -f
 
 This shows the full command line and details of the process.
 
-== Real-World Context
+*Real-World Context*
 
 [quote, Sysadmin Nate]
 ____
@@ -104,7 +104,7 @@ The usual pattern is:
 Bookmark this technique - you'll use it again.
 ____
 
-*== *What We've Discovered*
+*What We've Discovered*
 
 At this point, you should be able to clearly identify:
 
