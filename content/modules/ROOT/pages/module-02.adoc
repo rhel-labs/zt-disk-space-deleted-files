@@ -155,7 +155,7 @@ You just deleted a massive log file, but the disk space didn't free up!
 This is the mystery we need to solve.
 =====
 
-## What Just Happened?
+*What Just Happened?*
 
 You did everything right:
 - ✓ Found the large file consuming disk space
